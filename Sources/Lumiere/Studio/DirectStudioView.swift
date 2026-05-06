@@ -35,13 +35,13 @@ struct DirectStudioView: View {
                 ForEach(effects) { effect in
                     EffectRow(
                         effect: effect,
-                        implemented: effect == .anamorphic
+                        status: effect.implementationStatus
                     )
                 }
             } header: {
                 Text("9 cinematic effects")
             } footer: {
-                Text("Pipeline ceiling: 16.67 ms p95 · 12-stage decomposition · F-MC-MVP-1..5 gates 2026-08-30 / 2026-09-30")
+                Text("5 real CIFilter / 4 scaffold · pipeline ceiling 16.67 ms p95 · F-MC-MVP-1..5 gates 2026-08-30 / 2026-09-30")
                     .font(.caption2)
             }
         }
@@ -53,29 +53,51 @@ struct DirectStudioView: View {
 
 private struct EffectRow: View {
     let effect: CinematicEffect
-    let implemented: Bool
+    let status: EffectImplementationStatus
 
     var body: some View {
         HStack {
             Image(systemName: effect.symbol)
                 .frame(width: 28)
-                .foregroundStyle(implemented ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                .foregroundStyle(status == .real ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
             VStack(alignment: .leading, spacing: 2) {
                 Text(effect.name).font(.body)
                 Text(effect.anchor).font(.caption2.monospaced()).foregroundStyle(.secondary)
             }
             Spacer()
-            if implemented {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-                    .font(.caption)
-            } else {
-                Text("mk2")
-                    .font(.caption2.monospaced())
-                    .foregroundStyle(.tertiary)
-            }
+            statusBadge
         }
-        .opacity(implemented ? 1.0 : 0.6)
+        .opacity(status == .real ? 1.0 : 0.7)
+    }
+
+    @ViewBuilder
+    private var statusBadge: some View {
+        switch status {
+        case .real:
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+                .font(.caption)
+        case .scaffold:
+            Text("scaffold")
+                .font(.caption2.monospaced())
+                .foregroundStyle(.orange)
+        }
+    }
+}
+
+enum EffectImplementationStatus {
+    case real      // CIFilter-backed FrameProcessor implemented
+    case scaffold  // pass-through FrameProcessor; mk3 implementation
+}
+
+extension CinematicEffect {
+    var implementationStatus: EffectImplementationStatus {
+        switch self {
+        case .anamorphic, .tealOrange, .lensFlare, .grain, .titleCard:
+            return .real
+        case .slowMo, .bokeh, .freeze, .music:
+            return .scaffold
+        }
     }
 }
 
