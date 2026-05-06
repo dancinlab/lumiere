@@ -50,7 +50,6 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.need-singularity.lumiere
-        PRODUCT_NAME: Lumière
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: ""
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
