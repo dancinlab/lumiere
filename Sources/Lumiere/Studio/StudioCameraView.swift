@@ -6,20 +6,28 @@ struct StudioCameraView: View {
     /// `CameraSession` as the `FrameProcessor`, and also held as a
     /// view-state reference so the toggle row can flip stages on/off
     /// live without rebuilding the camera session.
-    @StateObject private var bridge = StudioPipelineBridge()
+    @StateObject private var bridge: StudioPipelineBridge
     @StateObject private var session: CameraSession
-    @State private var anamorphicEnabled = true
-    @State private var enabledEffects: Set<CinematicEffect> = [.anamorphic]
+    @State private var anamorphicEnabled: Bool
+    @State private var enabledEffects: Set<CinematicEffect>
     @Environment(\.dismiss) private var dismiss
 
     private let aspectRatio: CGFloat = 2.39
 
-    init() {
-        let bridge = StudioPipelineBridge()
+    /// Initial pipeline configuration. mk4-A introduces the
+    /// `fullCinematic` preset: all 5 real CIFilter stages on
+    /// (anamorphic + tealOrange + lensFlare + grain + titleCard)
+    /// for the spec's "main-character" composite look. The 4 scaffold
+    /// stages stay off until their mk5 subsystems land.
+    init(preset: StudioPreset = .anamorphicOnly) {
+        let initial = preset.enabledEffects
+        let bridge = StudioPipelineBridge(initialEffects: initial)
         _bridge = StateObject(wrappedValue: bridge)
         _session = StateObject(
             wrappedValue: CameraSession(processor: bridge.pipeline)
         )
+        _enabledEffects = State(initialValue: initial)
+        _anamorphicEnabled = State(initialValue: initial.contains(.anamorphic))
     }
 
     var body: some View {
@@ -171,11 +179,30 @@ struct StudioCameraView: View {
 final class StudioPipelineBridge: ObservableObject {
     let pipeline: StudioPipeline
 
-    init() {
-        // Default: anamorphic on, others off. F-MC-MVP-1 latency
-        // measurement starts here — toggling stages on adds their
-        // CIFilter cost to the recorded p50 / p95 in real time.
-        self.pipeline = StudioPipeline(defaultEnabled: [.anamorphic])
+    init(initialEffects: Set<CinematicEffect> = [.anamorphic]) {
+        self.pipeline = StudioPipeline(defaultEnabled: initialEffects)
+    }
+}
+
+/// Initial pipeline configuration presets for the Studio capture
+/// surface. mk4-A: enumerated rather than ad-hoc Set<CinematicEffect>
+/// arguments so the launcher row in `DirectStudioView` can offer
+/// named entry points — anamorphic-only (Stage B legacy) vs the full
+/// 5-real-effect cinematic stack.
+enum StudioPreset {
+    case anamorphicOnly
+    case fullCinematic
+
+    var enabledEffects: Set<CinematicEffect> {
+        switch self {
+        case .anamorphicOnly:
+            return [.anamorphic]
+        case .fullCinematic:
+            // 5 real CIFilter effects per `EffectImplementationStatus`;
+            // 4 scaffold stages (slow-mo / bokeh / freeze / music)
+            // stay off — they are zero-cost pass-through anyway.
+            return [.anamorphic, .tealOrange, .lensFlare, .grain, .titleCard]
+        }
     }
 }
 

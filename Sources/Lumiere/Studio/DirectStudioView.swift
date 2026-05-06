@@ -5,27 +5,30 @@ import SwiftUI
 /// (Stage B mk1) implemented; 8 remaining effects are mk2 placeholders.
 struct DirectStudioView: View {
     private let effects: [CinematicEffect] = CinematicEffect.allCases
-    @State private var showAnamorphicCapture = false
+    @State private var capturePreset: StudioPreset?
 
     var body: some View {
         List {
             Section {
                 Button {
-                    showAnamorphicCapture = true
+                    capturePreset = .fullCinematic
                 } label: {
-                    HStack {
-                        Image(systemName: "rectangle.ratio.16.to.9")
-                            .frame(width: 28)
-                            .foregroundStyle(.orange)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Try Anamorphic 2.39:1").foregroundStyle(.primary)
-                            Text("first of 9 effects · Stage B").font(.caption2.monospaced()).foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundStyle(.tertiary)
-                            .font(.caption)
-                    }
+                    launcherRow(
+                        icon: "wand.and.stars",
+                        tint: .orange,
+                        title: "Full cinematic (5 real effects)",
+                        subtitle: "anamorphic + teal-orange + flare + grain + title · mk4-A"
+                    )
+                }
+                Button {
+                    capturePreset = .anamorphicOnly
+                } label: {
+                    launcherRow(
+                        icon: "rectangle.ratio.16.to.9",
+                        tint: .secondary,
+                        title: "Anamorphic 2.39:1 only",
+                        subtitle: "first of 9 effects · Stage B legacy"
+                    )
                 }
             } header: {
                 Text("Live")
@@ -45,8 +48,35 @@ struct DirectStudioView: View {
                     .font(.caption2)
             }
         }
-        .fullScreenCover(isPresented: $showAnamorphicCapture) {
-            StudioCameraView()
+        .fullScreenCover(item: $capturePreset) { preset in
+            StudioCameraView(preset: preset)
+        }
+    }
+
+    private func launcherRow(icon: String, tint: Color, title: String, subtitle: String) -> some View {
+        HStack {
+            Image(systemName: icon)
+                .frame(width: 28)
+                .foregroundStyle(tint)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).foregroundStyle(.primary)
+                Text(subtitle)
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Image(systemName: "chevron.right")
+                .foregroundStyle(.tertiary)
+                .font(.caption)
+        }
+    }
+}
+
+extension StudioPreset: Identifiable {
+    var id: String {
+        switch self {
+        case .anamorphicOnly: return "anamorphicOnly"
+        case .fullCinematic:  return "fullCinematic"
         }
     }
 }
