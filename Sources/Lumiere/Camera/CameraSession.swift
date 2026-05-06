@@ -4,9 +4,22 @@ import Combine
 @MainActor
 final class CameraSession: ObservableObject {
     let session = AVCaptureSession()
+    let recorder = FrameTimingRecorder()
 
     @Published private(set) var isRunning = false
     @Published private(set) var permissionState: AVAuthorizationStatus
+
+    private let processor: FrameProcessor = IdentityFrameProcessor()
+    private lazy var bufferDelegate = CameraSampleBufferDelegate(
+        processor: processor,
+        timingHandler: { [weak self] ms in
+            Task { @MainActor in self?.recorder.record(ms) }
+        }
+    )
+    private let frameQueue = DispatchQueue(
+        label: "com.need-singularity.lumiere.frames",
+        qos: .userInitiated
+    )
 
     init() {
         permissionState = AVCaptureDevice.authorizationStatus(for: .video)
@@ -43,6 +56,8 @@ final class CameraSession: ObservableObject {
 
         if session.outputs.isEmpty {
             let output = AVCaptureVideoDataOutput()
+            output.alwaysDiscardsLateVideoFrames = true
+            output.setSampleBufferDelegate(bufferDelegate, queue: frameQueue)
             if session.canAddOutput(output) {
                 session.addOutput(output)
             }
