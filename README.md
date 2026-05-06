@@ -6,17 +6,19 @@
 
 ---
 
-## Five modes
+## Two tabs · five surfaces
 
-| Mode | Verb | Surface | Anchor / signature |
-|---|---|---|---|
-| 📸 **Camera** | APPLIES | Real-time filter capture | 16.67 ms · 17.5 TOPS NPU · Roofline · Airy + Poisson |
-| 🎬 **Studio** | DIRECTS | 9-effect cinematic post | 2.39:1 anamorphic · teal-orange · Lucas-Kanade slow-mo · Cox grain |
-| 🧮 **Forge** | AUTHORS | Filter authoring algebra | 9 primitive ops · LPIPS ≤ 0.15 · depth ≤ 4 chain at 16.67 ms · 30-min auto-gen from N=5 |
-| 🪞 **Mirror** | GENERATES | 8-grid alternate-self slot machine | InstantID cosine ≥ 0.85 · DDIM 4-step at 18 ms · 5-axis identity (era/culture/profession/aesthetic/personal) |
-| 🎨 **Atelier** | EDITS · LIBRARY · DISCOVER | Pro photo editor + 70% royalty marketplace | LPIPS/SSIM/PSNR provable bounds · 7 physics-based tools · plaintext Recipe |
+The 5 verb-distinct sister specs are absorbed into 2 iOS tabs by capture-vs-post-capture concern. Verb-distinction is preserved as sub-mode within each tab.
 
-All five share the 16.67 ms hard real-time budget and 50 mJ/frame energy ceiling.
+| Tab | Sub-mode | Verb | Spec | Status |
+|---|---|---|---|---|
+| 📸 **Camera** | Filters | APPLIES | `camera-filter-app` | mk1 live · timing HUD · 16.67 ms p95 |
+| 📸 **Camera** | Mirror | GENERATES | `hexa-parallel-self` | mk1 capture-shell + 8-grid placeholder |
+| 🎬 **Studio** | Direct | DIRECTS | `hexa-main-character` | mk1 anamorphic 2.39:1 + 8 mk2 effects |
+| 🎬 **Studio** | Edit (Atelier) | EDITS · LIBRARY · DISCOVER | `hexa-vsco` | mk1 placeholder · full surface mk2 |
+| 🎬 **Studio** | Author (Forge) | AUTHORS | `hexa-filter-algebra` | mk1 placeholder + 9 primitive op catalog · runtime mk2 |
+
+All five share the 16.67 ms hard real-time budget and 50 mJ/frame energy ceiling. The Camera tab routes live-capture surfaces (APPLIES + GENERATES); the Studio tab routes post-capture creative surfaces (DIRECTS + EDITS + AUTHORS).
 
 ## Physical-limit anchors
 
@@ -87,10 +89,18 @@ lumiere/
 │   ├── ContentView.swift       TabView (Camera / Studio)
 │   ├── Camera/                 AVFoundation real-time pipeline
 │   │   ├── CameraSession.swift
-│   │   ├── CameraView.swift
-│   │   └── CameraPreviewView.swift  UIViewRepresentable
+│   │   ├── CameraView.swift          tab-level switcher (Filters | Mirror)
+│   │   ├── FiltersCaptureView.swift  APPLIES surface
+│   │   ├── MirrorView.swift          GENERATES surface (mk1 placeholder)
+│   │   ├── CameraPreviewView.swift   UIViewRepresentable
+│   │   └── FrameProcessor.swift  · FrameTimingRecorder.swift · …
 │   ├── Studio/
-│   │   └── StudioView.swift    9 cinematic effects (mk1 placeholder)
+│   │   ├── StudioView.swift          tab-level switcher (Direct | Edit | Author)
+│   │   ├── DirectStudioView.swift    DIRECTS surface · 9-effect catalog
+│   │   ├── AtelierView.swift         EDITS surface (mk1 placeholder)
+│   │   ├── ForgeView.swift           AUTHORS surface (mk1 placeholder)
+│   │   ├── StudioCameraView.swift    full-screen anamorphic capture sheet
+│   │   └── AnamorphicFrameProcessor.swift
 │   └── Assets.xcassets/        AppIcon · AccentColor
 ├── Tests/LumiereTests/         Swift Testing
 │   ├── CinematicEffectTests.swift
