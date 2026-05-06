@@ -3,15 +3,19 @@ import AVFoundation
 
 /// hexa-parallel-self surface — GENERATES verb.
 /// Slot-machine UX: single selfie → 8-grid alternate-self generation
-/// across 5 identity axes (era / culture / profession / aesthetic /
-/// personal-multiverse). mk3-C wires the capture-and-confirm shell to
-/// the real `MirrorSession` runtime + `IdentityAxisBank` 8-grid;
-/// SD v3 + InstantID + LoRA inference is mk4 (depends on
-/// `camera.cond.2` Core ML scaffold + SD-v3 weight conversion).
+/// across 5 identity axes. mk4-C closure: the "Capture" button now
+/// drives a real `AVCapturePhotoOutput` round-trip via
+/// `PhotoCaptureCoordinator` and feeds the resulting CVPixelBuffer
+/// into `MirrorSession.generate(from:)`. SD v3 + InstantID + LoRA
+/// inference itself is still stubbed (mk5 — `parallel_self.cond.2`
+/// pending SD-v3 weight conversion).
 struct MirrorView: View {
-    @StateObject private var session = CameraSession()
+    @StateObject private var session = CameraSession(enablePhotoCapture: true)
     @StateObject private var mirror = MirrorSession()
     @State private var captured = false
+    @State private var captureError: String?
+
+    private let coordinator = PhotoCaptureCoordinator()
 
     var body: some View {
         ZStack {
@@ -48,17 +52,24 @@ struct MirrorView: View {
                 .font(.caption.monospaced())
                 .foregroundStyle(.white.opacity(0.85))
             Button {
-                captured = true
-                Task { await mirror.generate() }
+                Task { await runCapture() }
             } label: {
                 Circle()
                     .fill(.white)
                     .frame(width: 72, height: 72)
                     .overlay(Circle().stroke(.white, lineWidth: 4).padding(-6))
             }
-            Text("InstantID 0.85 cosine · DDIM 4-step · 18 ms p95 (mk4)")
-                .font(.caption2.monospaced())
-                .foregroundStyle(.white.opacity(0.5))
+            if let captureError {
+                Text(captureError)
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(.red.opacity(0.9))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 16)
+            } else {
+                Text("InstantID 0.85 cosine · DDIM 4-step · 18 ms p95 (mk5)")
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(.white.opacity(0.5))
+            }
         }
         .padding(.bottom, 32)
     }
@@ -69,7 +80,7 @@ struct MirrorView: View {
             Text("Generating 8 alternate selves…")
                 .font(.callout)
                 .foregroundStyle(.white)
-            Text("MirrorSession.generate · 18 ms design ceiling (mk3 stub)")
+            Text("MirrorSession.generate · 18 ms design ceiling (mk4-C real photo capture)")
                 .font(.caption2.monospaced())
                 .foregroundStyle(.white.opacity(0.5))
         }
@@ -80,9 +91,7 @@ struct MirrorView: View {
             Text("8-grid alternate selves")
                 .font(.headline)
                 .foregroundStyle(.white)
-            Text(String(format: "generated in %.1f ms (mk3 stub)", mirror.lastGenerationMs))
-                .font(.caption2.monospaced())
-                .foregroundStyle(.white.opacity(0.5))
+            captureSummary
             LazyVGrid(
                 columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 4),
                 spacing: 4
@@ -94,17 +103,35 @@ struct MirrorView: View {
             .padding(.horizontal, 16)
             Button("Capture again") {
                 captured = false
+                captureError = nil
                 mirror.reset()
             }
             .foregroundStyle(.orange)
             .padding(.top, 8)
-            Text("mk4: SD v3 + InstantID + LoRA bank · F-PSELF-MVP-1..5 issues #16–20")
+            Text("mk5: SD v3 + InstantID + LoRA bank · F-PSELF-MVP-1..5 issues #16–20")
                 .font(.caption2.monospaced())
                 .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 16)
         }
         .padding(.top, 60)
+    }
+
+    private var captureSummary: some View {
+        VStack(spacing: 4) {
+            if let dims = mirror.lastSelfieDimensions {
+                Text("source \(Int(dims.width))×\(Int(dims.height)) px · AVCapturePhotoOutput ✓")
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(.green)
+            } else {
+                Text("source missing — mk5 stub fallback")
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(.orange)
+            }
+            Text(String(format: "generated in %.1f ms (mk4-C scaffold)", mirror.lastGenerationMs))
+                .font(.caption2.monospaced())
+                .foregroundStyle(.white.opacity(0.5))
+        }
     }
 
     private func placeholderTile(candidate: TimelineCandidate) -> some View {
@@ -137,6 +164,26 @@ struct MirrorView: View {
             Text("Camera access required")
                 .foregroundStyle(.white)
                 .font(.headline)
+        }
+    }
+
+    // MARK: - Capture flow
+
+    private func runCapture() async {
+        captureError = nil
+        captured = true
+
+        guard let output = session.photoOutput else {
+            await mirror.generate(from: nil)
+            captureError = "photo output unavailable — fell back to mk5 stub"
+            return
+        }
+        do {
+            let buffer = try await coordinator.capturePhoto(from: output)
+            await mirror.generate(from: buffer)
+        } catch {
+            captureError = "capture failed: \(error.localizedDescription) — fell back to mk5 stub"
+            await mirror.generate(from: nil)
         }
     }
 }
