@@ -19,7 +19,7 @@ Measurement + CI helpers. None of these substitute for the iPhone 15 Pro referen
 
 | Script | Purpose |
 |---|---|
-| [`convert_models.py`](convert_models.py) | torchvision / CLIP / SAM → Core ML INT8 `.mlpackage` (resnet50 implemented; CLIP + SAM stub-NotImplemented) |
+| [`convert_models.hexa`](convert_models.hexa) | torchvision / CLIP / SAM → Core ML INT8 `.mlpackage` (resnet50 implemented; CLIP + SAM stub-NotImplemented). hexa-only entry point per project policy; coremltools + torch are an irreducible Python ML dependency invoked via embedded `python3 -` heredoc. |
 
 ## Pending (post-mk2)
 

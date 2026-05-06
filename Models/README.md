@@ -12,19 +12,19 @@ These files are **git-ignored** (`.mlpackage` / `.mlmodelc` patterns) — they s
 
 ## Generating the files
 
-One-time on a maintainer's Mac with Python 3.11+:
+One-time on a maintainer's Mac. The entry point is the hexa script (per project policy: hexa-only); coremltools + torch are an irreducible Python ML dependency invoked by the script under the hood:
 
 ```sh
 pip install coremltools torch torchvision
 pip install git+https://github.com/openai/CLIP.git
 pip install git+https://github.com/facebookresearch/segment-anything.git
 
-scripts/convert_models.py resnet50   --out Models/ResNet50_INT8.mlpackage
-scripts/convert_models.py clip_image --out Models/CLIP_Image_INT8.mlpackage
-scripts/convert_models.py sam        --out Models/SAM_ViT_B_INT8.mlpackage
+hexa scripts/convert_models.hexa resnet50   --out Models/ResNet50_INT8.mlpackage
+hexa scripts/convert_models.hexa clip_image --out Models/CLIP_Image_INT8.mlpackage
+hexa scripts/convert_models.hexa sam        --out Models/SAM_ViT_B_INT8.mlpackage
 ```
 
-CLIP and SAM conversion paths are stub-NotImplemented in `scripts/convert_models.py` until their source-loading wrappers land — track via `camera.cond.2` and `parallel_self.cond.2` in `.roadmap.camera` / `.roadmap.parallel_self`.
+CLIP and SAM conversion paths are stub-NotImplemented in `scripts/convert_models.hexa` until their source-loading wrappers land — track via `camera.cond.2` and `parallel_self.cond.2` in `.roadmap.camera` / `.roadmap.parallel_self`.
 
 ## Loading from Swift
 

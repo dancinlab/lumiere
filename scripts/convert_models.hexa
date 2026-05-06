@@ -1,0 +1,123 @@
+#!hexa strict
+// scripts/convert_models.hexa — Core ML INT8 conversion for the Lumière
+// vision stack (camera.cond.2 + parallel_self.cond.2 dependency).
+//
+// hexa-only entry point per project policy. coremltools + torch are an
+// irreducible Python ML dependency in 2026 (no native hexa-lang
+// equivalent for tracing PyTorch graphs into MLProgram) — the .hexa
+// frame parses argv + dispatches; the actual conversion delegates to
+// embedded `python3 -` via exec() heredoc per hive precedent in
+// tool/auth_store_bench_live_driver.hexa.
+//
+// @tool(slug="lumiere_convert_models", desc="resnet50 / clip_image / sam → Core ML INT8 .mlpackage. resnet50 implemented; clip_image + sam stub-NotImplemented for mk3 cycle.")
+// @usage(hexa scripts/convert_models.hexa <model> --out <path>)
+// @example(hexa scripts/convert_models.hexa resnet50 --out Models/ResNet50_INT8.mlpackage)
+// @exit_codes(0=converted, 2=usage, 3=NotImplemented stub, 4=python3 missing, 5=conversion failed)
+//
+// raw 9 hexa-only · raw 91 honest C3 (Python irreducibility disclosed).
+
+let av = args()
+
+fn _shell_escape(s: string) -> string {
+    let mut parts = []
+    parts.push("'")
+    let mut i = 0
+    while i < len(s) {
+        let c = s.substring(i, i + 1)
+        if c == "'" { parts.push("'\\''") } else { parts.push(c) }
+        i = i + 1
+    }
+    parts.push("'")
+    return parts.join("")
+}
+
+fn _print_usage() -> void {
+    println("usage: hexa scripts/convert_models.hexa <model> --out <path>")
+    println("  model: resnet50 | clip_image | sam")
+    println("  example: hexa scripts/convert_models.hexa resnet50 --out Models/ResNet50_INT8.mlpackage")
+}
+
+if len(av) < 3 || av[1] != "--out" {
+    _print_usage()
+    exit(2)
+}
+
+let model = av[0]
+let out_path = av[2]
+
+// python3 + coremltools availability check (irreducible ML dependency).
+let py_check = to_string(exec("which python3 2>/dev/null")).trim()
+if py_check == "" {
+    println("python3 not found in PATH (required for coremltools)")
+    exit(4)
+}
+
+// Python conversion bodies. Joined with explicit "\n" since hexa string
+// literals are single-line; the joined result is fed to `python3 -` via
+// a single-quoted heredoc (no shell expansion of $variables).
+fn _py_resnet50() -> string {
+    let mut p = []
+    p.push("import sys")
+    p.push("from pathlib import Path")
+    p.push("import torch")
+    p.push("import torchvision.models as models")
+    p.push("import coremltools as ct")
+    p.push("from coremltools.optimize.coreml import (")
+    p.push("    OpLinearQuantizerConfig, OptimizationConfig, linear_quantize_weights,")
+    p.push(")")
+    p.push("out_path = Path(sys.argv[1])")
+    p.push("model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT).eval()")
+    p.push("example = torch.randn(1, 3, 224, 224)")
+    p.push("traced = torch.jit.trace(model, example)")
+    p.push("mlmodel = ct.convert(")
+    p.push("    traced,")
+    p.push("    inputs=[ct.ImageType(name='image', shape=example.shape, scale=1/255.0)],")
+    p.push("    compute_precision=ct.precision.FLOAT16,")
+    p.push("    minimum_deployment_target=ct.target.iOS18,")
+    p.push(")")
+    p.push("op_config = OpLinearQuantizerConfig(mode='linear_symmetric', weight_threshold=512)")
+    p.push("config = OptimizationConfig(global_config=op_config)")
+    p.push("mlmodel = linear_quantize_weights(mlmodel, config=config)")
+    p.push("out_path.parent.mkdir(parents=True, exist_ok=True)")
+    p.push("mlmodel.save(str(out_path))")
+    p.push("size_mb = sum(f.stat().st_size for f in out_path.rglob('*') if f.is_file()) / 1e6")
+    p.push("print(f'OK {out_path} ({size_mb:.1f} MB)')")
+    return p.join("\n")
+}
+
+fn _run_python(py: string, out: string) -> int {
+    // Single-quoted heredoc: no $ expansion, $ literals safe.
+    // Append a trailing __STATUS__=$? marker so the .hexa frame can read
+    // the exit code without depending on exec() to surface it.
+    let cmd = "python3 - " + _shell_escape(out) + " <<'PYEOF'\n" + py + "\nPYEOF\nstatus=$?\necho \"__STATUS__=$status\""
+    let raw = to_string(exec(cmd))
+    println(raw)
+
+    let parse = "printf '%s' " + _shell_escape(raw) + " | grep -o '__STATUS__=[0-9]\\+' | tail -1 | sed 's/__STATUS__=//'"
+    let status = to_int(to_string(exec(parse)).trim())
+    return status
+}
+
+if model == "resnet50" {
+    let status = _run_python(_py_resnet50(), out_path)
+    if status == 0 { exit(0) } else { exit(5) }
+} else if model == "clip_image" {
+    println("clip_image: NotImplemented (mk3)")
+    println("  install:  pip install git+https://github.com/openai/CLIP.git")
+    println("  load ViT-B/16, trace .visual module on (1,3,224,224),")
+    println("  ct.convert with ImageType + 512-dim FloatType output, INT8 quantize.")
+    println("  Mirror (hexa-parallel-self) consumes the 512-dim CLIP-Image latent.")
+    println("  parallel_self.cond.2 dependency.")
+    exit(3)
+} else if model == "sam" {
+    println("sam: NotImplemented (mk3)")
+    println("  install:  pip install git+https://github.com/facebookresearch/segment-anything.git")
+    println("  load sam_vit_b_01ec64.pth, trace mask predictor (point+box → mask),")
+    println("  ct.convert multi-input + mask output, INT8 quantize.")
+    println("  Camera uses SAM masks for content-aware spatial filter scoping.")
+    exit(3)
+} else {
+    println("unknown model: " + model)
+    _print_usage()
+    exit(2)
+}
