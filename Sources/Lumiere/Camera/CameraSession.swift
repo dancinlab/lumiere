@@ -9,7 +9,7 @@ final class CameraSession: ObservableObject {
     @Published private(set) var isRunning = false
     @Published private(set) var permissionState: AVAuthorizationStatus
 
-    private let processor: FrameProcessor = IdentityFrameProcessor()
+    private let processor: FrameProcessor
     private lazy var bufferDelegate = CameraSampleBufferDelegate(
         processor: processor,
         timingHandler: { [weak self] ms in
@@ -21,7 +21,8 @@ final class CameraSession: ObservableObject {
         qos: .userInitiated
     )
 
-    init() {
+    init(processor: FrameProcessor = IdentityFrameProcessor()) {
+        self.processor = processor
         permissionState = AVCaptureDevice.authorizationStatus(for: .video)
     }
 

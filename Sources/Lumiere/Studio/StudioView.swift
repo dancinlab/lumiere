@@ -2,39 +2,80 @@ import SwiftUI
 
 struct StudioView: View {
     private let effects: [CinematicEffect] = CinematicEffect.allCases
+    @State private var showAnamorphicCapture = false
 
     var body: some View {
         NavigationStack {
             List {
                 Section {
-                    ForEach(effects) { effect in
-                        EffectRow(effect: effect)
+                    Button {
+                        showAnamorphicCapture = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "rectangle.ratio.16.to.9")
+                                .frame(width: 28)
+                                .foregroundStyle(.orange)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Try Anamorphic 2.39:1").foregroundStyle(.primary)
+                                Text("first of 9 effects · Stage B").font(.caption2.monospaced()).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .foregroundStyle(.tertiary)
+                                .font(.caption)
+                        }
                     }
                 } header: {
-                    Text("9 cinematic effects (mk1 placeholder)")
+                    Text("Live")
+                }
+
+                Section {
+                    ForEach(effects) { effect in
+                        EffectRow(
+                            effect: effect,
+                            implemented: effect == .anamorphic
+                        )
+                    }
+                } header: {
+                    Text("9 cinematic effects")
                 } footer: {
                     Text("Pipeline ceiling: 16.67 ms p95 · 12-stage decomposition · F-MC-MVP-1..5 gates 2026-08-30 / 2026-09-30")
                         .font(.caption2)
                 }
             }
             .navigationTitle("Lumière Studio")
+            .fullScreenCover(isPresented: $showAnamorphicCapture) {
+                StudioCameraView()
+            }
         }
     }
 }
 
 private struct EffectRow: View {
     let effect: CinematicEffect
+    let implemented: Bool
 
     var body: some View {
         HStack {
             Image(systemName: effect.symbol)
                 .frame(width: 28)
-                .foregroundStyle(.tint)
+                .foregroundStyle(implemented ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
             VStack(alignment: .leading, spacing: 2) {
                 Text(effect.name).font(.body)
                 Text(effect.anchor).font(.caption2.monospaced()).foregroundStyle(.secondary)
             }
+            Spacer()
+            if implemented {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                    .font(.caption)
+            } else {
+                Text("mk2")
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(.tertiary)
+            }
         }
+        .opacity(implemented ? 1.0 : 0.6)
     }
 }
 
