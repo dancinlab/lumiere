@@ -1,4 +1,6 @@
 import Testing
+import Foundation
+import CoreVideo
 @testable import Lumiere
 
 @Suite("FrameTimingRecorder percentile + rolling window")
