@@ -34,21 +34,32 @@ struct AnamorphicFrameProcessorTests {
         #expect(abs(crop.height - 418.41) < 1.0)
     }
 
-    @Test("Crop rect for narrower-than-target input crops left + right")
+    @Test("Crop rect for portrait input (narrower-aspect than target) crops top + bottom")
     func portraitInput() {
-        // 1080×1920 (9:16 portrait, aspect 0.5625) vs target 2.39
+        // 1080×1920 (9:16 portrait, aspect 0.5625) vs target 2.39 → crop top+bottom
         let crop = AnamorphicFrameProcessor.cropRect(
             for: CGSize(width: 1080, height: 1920),
             targetAspect: 2.39
         )
-        // height preserved → width = 1920 * 2.39 = 4588.8 — exceeds input width
-        // So we hit the else-branch and crop sides.
-        // Wait: input aspect 0.5625 < target 2.39 → narrower-than-target branch:
-        //   newWidth = height * targetAspect = 1920 * 2.39 = 4588.8 (exceeds width)
-        // For a portrait input we'd be expanding, not cropping. Real anamorphic
-        // input is always landscape. This test pins the math regardless.
-        #expect(crop.height == 1920)
-        #expect(crop.width > 1080)  // out-of-bounds; caller must clamp
+        #expect(crop.width == 1080)
+        // newHeight = 1080 / 2.39 ≈ 451.88; centered yOffset = (1920 - 451.88)/2 ≈ 734.06
+        #expect(abs(crop.height - 451.88) < 1.0)
+        #expect(abs(crop.minX) < 0.001)
+        #expect(abs(crop.minY - 734.06) < 1.0)
+    }
+
+    @Test("Wider-than-target input (3:1 cinemascope) crops left + right at 2.39 target")
+    func ultraWideInput() {
+        // 3000×1000 (aspect 3.0) vs target 2.39 → crop sides (input wider than target)
+        let crop = AnamorphicFrameProcessor.cropRect(
+            for: CGSize(width: 3000, height: 1000),
+            targetAspect: 2.39
+        )
+        // newWidth = 1000 * 2.39 = 2390; xOffset = (3000 - 2390)/2 = 305
+        #expect(abs(crop.width - 2390.0) < 1.0)
+        #expect(crop.height == 1000)
+        #expect(abs(crop.minX - 305.0) < 1.0)
+        #expect(abs(crop.minY) < 0.001)
     }
 
     @Test("Crop rect for invalid (zero) size returns .zero")

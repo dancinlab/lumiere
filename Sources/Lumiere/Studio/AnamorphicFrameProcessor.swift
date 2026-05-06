@@ -25,14 +25,16 @@ final class AnamorphicFrameProcessor: FrameProcessor, @unchecked Sendable {
     }
 
     /// Centered crop rect for `size` against `targetAspect` (W/H).
-    /// - Wider input than target (e.g. 16:9 = 1.778 vs 2.39): crop top + bottom.
-    /// - Narrower input than target: crop left + right.
+    /// - Input narrower-aspect than target (e.g. 16:9 = 1.778 vs 2.39:1):
+    ///   crop top + bottom — newHeight = width / targetAspect.
+    /// - Input wider-aspect than target: crop left + right —
+    ///   newWidth = height * targetAspect.
     static func cropRect(for size: CGSize, targetAspect: CGFloat) -> CGRect {
         guard size.width > 0, size.height > 0, targetAspect > 0 else {
             return .zero
         }
         let inputAspect = size.width / size.height
-        if inputAspect >= targetAspect {
+        if inputAspect < targetAspect {
             let newHeight = size.width / targetAspect
             let yOffset = (size.height - newHeight) / 2
             return CGRect(x: 0, y: yOffset, width: size.width, height: newHeight)
