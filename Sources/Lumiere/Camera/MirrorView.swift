@@ -4,12 +4,13 @@ import AVFoundation
 /// hexa-parallel-self surface — GENERATES verb.
 /// Slot-machine UX: single selfie → 8-grid alternate-self generation
 /// across 5 identity axes (era / culture / profession / aesthetic /
-/// personal-multiverse). mk1 ships the capture-and-confirm shell + a
-/// placeholder grid; the actual SD v3 + InstantID + LoRA inference
-/// pipeline lands at parallel_self.cond.2 (mk2, depends on Core ML
-/// scaffold camera.cond.2).
+/// personal-multiverse). mk3-C wires the capture-and-confirm shell to
+/// the real `MirrorSession` runtime + `IdentityAxisBank` 8-grid;
+/// SD v3 + InstantID + LoRA inference is mk4 (depends on
+/// `camera.cond.2` Core ML scaffold + SD-v3 weight conversion).
 struct MirrorView: View {
     @StateObject private var session = CameraSession()
+    @StateObject private var mirror = MirrorSession()
     @State private var captured = false
 
     var body: some View {
@@ -19,7 +20,11 @@ struct MirrorView: View {
             switch session.permissionState {
             case .authorized:
                 if captured {
-                    eightGridPlaceholder
+                    if mirror.isGenerating {
+                        generatingView
+                    } else {
+                        eightGridView
+                    }
                 } else {
                     CameraPreviewView(session: session.session)
                         .ignoresSafeArea()
@@ -42,37 +47,58 @@ struct MirrorView: View {
             Text("Lumière Camera · Mirror (GENERATES)")
                 .font(.caption.monospaced())
                 .foregroundStyle(.white.opacity(0.85))
-            Button { captured = true } label: {
+            Button {
+                captured = true
+                Task { await mirror.generate() }
+            } label: {
                 Circle()
                     .fill(.white)
                     .frame(width: 72, height: 72)
                     .overlay(Circle().stroke(.white, lineWidth: 4).padding(-6))
             }
-            Text("InstantID 0.85 cosine · DDIM 4-step · 18 ms p95 (mk2)")
+            Text("InstantID 0.85 cosine · DDIM 4-step · 18 ms p95 (mk4)")
                 .font(.caption2.monospaced())
                 .foregroundStyle(.white.opacity(0.5))
         }
         .padding(.bottom, 32)
     }
 
-    private var eightGridPlaceholder: some View {
+    private var generatingView: some View {
+        VStack(spacing: 14) {
+            ProgressView().tint(.white)
+            Text("Generating 8 alternate selves…")
+                .font(.callout)
+                .foregroundStyle(.white)
+            Text("MirrorSession.generate · 18 ms design ceiling (mk3 stub)")
+                .font(.caption2.monospaced())
+                .foregroundStyle(.white.opacity(0.5))
+        }
+    }
+
+    private var eightGridView: some View {
         VStack(spacing: 16) {
             Text("8-grid alternate selves")
                 .font(.headline)
                 .foregroundStyle(.white)
+            Text(String(format: "generated in %.1f ms (mk3 stub)", mirror.lastGenerationMs))
+                .font(.caption2.monospaced())
+                .foregroundStyle(.white.opacity(0.5))
             LazyVGrid(
                 columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 4),
                 spacing: 4
             ) {
-                ForEach(0..<8, id: \.self) { i in
-                    placeholderTile(label: timelineName(i))
+                ForEach(mirror.generatedTimelines) { candidate in
+                    placeholderTile(candidate: candidate)
                 }
             }
             .padding(.horizontal, 16)
-            Button("Capture again") { captured = false }
-                .foregroundStyle(.orange)
-                .padding(.top, 8)
-            Text("mk2: SD v3 + InstantID + LoRA bank · F-PSELF-MVP-1..5 issues #16–20")
+            Button("Capture again") {
+                captured = false
+                mirror.reset()
+            }
+            .foregroundStyle(.orange)
+            .padding(.top, 8)
+            Text("mk4: SD v3 + InstantID + LoRA bank · F-PSELF-MVP-1..5 issues #16–20")
                 .font(.caption2.monospaced())
                 .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)
@@ -81,7 +107,7 @@ struct MirrorView: View {
         .padding(.top, 60)
     }
 
-    private func placeholderTile(label: String) -> some View {
+    private func placeholderTile(candidate: TimelineCandidate) -> some View {
         ZStack {
             Rectangle()
                 .fill(.white.opacity(0.12))
@@ -90,22 +116,17 @@ struct MirrorView: View {
                 Image(systemName: "person.crop.rectangle.stack")
                     .font(.title2)
                     .foregroundStyle(.white.opacity(0.5))
-                Text(label)
+                Text(candidate.label)
                     .font(.caption2.monospaced())
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.white.opacity(0.85))
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
+                Text(candidate.axis.rawValue)
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(.orange.opacity(0.7))
             }
             .padding(4)
         }
-    }
-
-    private func timelineName(_ i: Int) -> String {
-        let labels = [
-            "Renaissance", "Edo", "Belle Époque", "1980s",
-            "2070s", "Cottagecore", "Cyberpunk", "Y2K"
-        ]
-        return labels[i % labels.count]
     }
 
     private var permissionDenied: some View {
