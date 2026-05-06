@@ -1,0 +1,46 @@
+name: Measure (F-gate proxy)
+
+on:
+  workflow_dispatch:
+    inputs:
+      gate:
+        description: 'Gate to exercise (currently only F-CFA-MVP-1 / F-MC-MVP-1 latency)'
+        required: false
+        default: 'F-CFA-MVP-1'
+
+jobs:
+  latency:
+    name: Latency p50 / p95 (simulator proxy)
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          xcode-select -p
+          xcodebuild -version
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Run latency proxy
+        id: measure
+        run: |
+          chmod +x scripts/measure_latency.sh
+          OUT=$(scripts/measure_latency.sh)
+          echo "$OUT"
+          echo "result=$OUT" >> "$GITHUB_OUTPUT"
+
+      - name: Annotate
+        run: |
+          echo "## Measurement result — ${{ github.event.inputs.gate || 'F-CFA-MVP-1' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          echo '${{ steps.measure.outputs.result }}' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "⚠️ Simulator-only smoke. Real F-gate closure requires iPhone 15 Pro reference per spec §19.2." >> "$GITHUB_STEP_SUMMARY"
