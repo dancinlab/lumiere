@@ -2,18 +2,21 @@
 
 > 빛으로 찍고, 빛으로 연출하다 — *Capture in light, direct in light*
 
-**Lumière** is a physical-limit iOS camera + cinematic studio app, anchored at the 16.67 ms real-time budget (60 fps Nyquist) and the Airy diffraction limit.
+**Lumière** is a physical-limit iOS app that absorbs the entire `apps` axis of [n6-architecture](https://github.com/need-singularity/n6-architecture) — 5 verb-distinct surfaces unified under the 16.67 ms real-time budget (60 fps Nyquist) and the Airy diffraction limit.
 
 ---
 
-## Two modes
+## Five modes
 
-| Mode | Verb | Surface | Anchor |
+| Mode | Verb | Surface | Anchor / signature |
 |---|---|---|---|
-| 📸 **Lumière Camera** | APPLIES | Real-time filter capture | 16.67 ms · 17.5 TOPS NPU · Roofline · Airy + Poisson |
-| 🎬 **Lumière Studio** | DIRECTS | 9-effect cinematic post | 2.39:1 anamorphic · teal-orange · Lucas-Kanade slow-mo · Cox grain |
+| 📸 **Camera** | APPLIES | Real-time filter capture | 16.67 ms · 17.5 TOPS NPU · Roofline · Airy + Poisson |
+| 🎬 **Studio** | DIRECTS | 9-effect cinematic post | 2.39:1 anamorphic · teal-orange · Lucas-Kanade slow-mo · Cox grain |
+| 🧮 **Forge** | AUTHORS | Filter authoring algebra | 9 primitive ops · LPIPS ≤ 0.15 · depth ≤ 4 chain at 16.67 ms · 30-min auto-gen from N=5 |
+| 🪞 **Mirror** | GENERATES | 8-grid alternate-self slot machine | InstantID cosine ≥ 0.85 · DDIM 4-step at 18 ms · 5-axis identity (era/culture/profession/aesthetic/personal) |
+| 🎨 **Atelier** | EDITS · LIBRARY · DISCOVER | Pro photo editor + 70% royalty marketplace | LPIPS/SSIM/PSNR provable bounds · 7 physics-based tools · plaintext Recipe |
 
-Both share the same 16.67 ms hard real-time budget and 50 mJ/frame energy ceiling.
+All five share the 16.67 ms hard real-time budget and 50 mJ/frame energy ceiling.
 
 ## Physical-limit anchors
 
@@ -31,19 +34,31 @@ Anamorphic 2.39:1 · teal-orange grading · Lucas-Kanade 1981 optical-flow slow-
 
 ## Status
 
-`mk1` — pre-MVP. Falsifier gates **F-CFA-MVP-1..5** + **F-MC-MVP-1..5** declared against iPhone 15 Pro reference (latency p95 / NPU utilization / JPEG size / MOS / energy per frame), deadlines **2026-08-30 / 2026-09-30**.
+`mk1` — pre-MVP scaffold. Each of the 5 modes carries a 5-tuple of pre-declared 90-day falsifier gates (25 total) against iPhone 15 Pro reference, deadlines **2026-08-30 / 2026-09-30**:
+
+| Mode | F-gate prefix | GitHub issues |
+|---|---|---|
+| Camera | F-CFA-MVP-1..5 | [#1–5](https://github.com/need-singularity/lumiere/issues?q=label%3Acamera) |
+| Studio | F-MC-MVP-1..5 | [#6–10](https://github.com/need-singularity/lumiere/issues?q=label%3Astudio) |
+| Forge | F-FA-MVP-1..5 | [#11–15](https://github.com/need-singularity/lumiere/issues?q=label%3Aforge) |
+| Mirror | F-PSELF-MVP-1..5 | [#16–20](https://github.com/need-singularity/lumiere/issues?q=label%3Amirror) |
+| Atelier | F-VSCO-MVP-1..5 | [#21–25](https://github.com/need-singularity/lumiere/issues?q=label%3Aatelier) |
+
+mk1 ships UI for Camera + Studio (anamorphic 2.39:1 first effect); Forge / Mirror / Atelier mk1 specs are absorbed into `docs/` with [`.roadmap.<domain>`](.roadmap.camera) tracking. mk2 implements full surfaces.
 
 ## Specs
 
-- [docs/camera/camera-filter-app.md](docs/camera/camera-filter-app.md) — 21-section spec, own#15 template
-- [docs/studio/hexa-main-character.md](docs/studio/hexa-main-character.md) — 21-section spec, own#15 template
+- [docs/camera/camera-filter-app.md](docs/camera/camera-filter-app.md) — 📸 Camera (APPLIES)
+- [docs/studio/hexa-main-character.md](docs/studio/hexa-main-character.md) — 🎬 Studio (DIRECTS)
+- [docs/filter_algebra/hexa-filter-algebra.md](docs/filter_algebra/hexa-filter-algebra.md) — 🧮 Forge (AUTHORS)
+- [docs/parallel_self/hexa-parallel-self.md](docs/parallel_self/hexa-parallel-self.md) — 🪞 Mirror (GENERATES)
+- [docs/vsco/hexa-vsco.md](docs/vsco/hexa-vsco.md) — 🎨 Atelier (EDITS · LIBRARY · DISCOVER)
+
+All five are own#15 21-section research-paper-format spec docs (own#33 ai-native-verify-pattern Block A-G).
 
 ## Lineage
 
-Extracted from the [n6-architecture](https://github.com/) **apps axis** (13th axis, registered 2026-05-01) where 5 sibling domains share verb-distinction:
-APPLIES (camera) · AUTHORS (filter-algebra) · GENERATES (parallel-self) · DIRECTS (studio) · EDITS-LIBRARY-DISCOVER (vsco).
-
-Lumière is the camera ⊕ studio integration.
+Lumière absorbs the entire [n6-architecture](https://github.com/need-singularity/n6-architecture) **apps axis** — the 13th axis registered 2026-05-01 — where the 5 verb-distinct sibling domains were factored as separate research papers but share one consumer iOS surface.
 
 ## Build
 
@@ -82,8 +97,23 @@ lumiere/
 │   └── PhysicalLimitTests.swift
 ├── docs/
 │   ├── camera/camera-filter-app.md
-│   └── studio/hexa-main-character.md
-└── .github/workflows/ios.yml   GitHub Actions (build + test)
+│   ├── studio/hexa-main-character.md
+│   ├── filter_algebra/hexa-filter-algebra.md
+│   ├── parallel_self/hexa-parallel-self.md
+│   ├── vsco/hexa-vsco.md
+│   └── measurements/             F-gate measurement records
+├── .roadmap.camera               mk2 per-domain JSONL roadmap (5)
+├── .roadmap.studio
+├── .roadmap.filter_algebra
+├── .roadmap.parallel_self
+├── .roadmap.vsco
+├── .roadmap.release              cross-cutting TestFlight/App Store
+├── fastlane/                     Fastfile + Appfile + Matchfile
+├── scripts/                      F-gate measurement helpers
+└── .github/workflows/
+    ├── ios.yml                   GitHub Actions (build + test)
+    ├── release.yml               TestFlight on v* tag
+    └── measure.yml               F-gate proxy on workflow_dispatch
 ```
 
 `Lumiere.xcodeproj` is git-ignored — regenerated from `project.yml` on every build.
