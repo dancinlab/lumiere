@@ -41,7 +41,7 @@ struct DirectStudioView: View {
             } header: {
                 Text("9 cinematic effects")
             } footer: {
-                Text("5 real CIFilter / 4 scaffold · pipeline ceiling 16.67 ms p95 · F-MC-MVP-1..5 gates 2026-08-30 / 2026-09-30")
+                Text("12-stage pipeline · 5 real CIFilter / 4 scaffold · pipeline ceiling 16.67 ms p95 · F-MC-MVP-1..5 gates 2026-08-30 / 2026-09-30")
                     .font(.caption2)
             }
         }
@@ -145,6 +145,23 @@ enum CinematicEffect: String, CaseIterable, Identifiable {
         case .freeze:      return "snowflake"
         case .music:       return "music.note"
         case .titleCard:   return "textformat"
+        }
+    }
+
+    /// Compact label for the live `StudioCameraView` toggle chips —
+    /// keeps the horizontal-scroll row legible at a glance without
+    /// truncating the longer marketing names from `name`.
+    var shortName: String {
+        switch self {
+        case .anamorphic:  return "anamorphic"
+        case .tealOrange:  return "teal-orange"
+        case .slowMo:      return "slow-mo"
+        case .bokeh:       return "bokeh"
+        case .lensFlare:   return "flare"
+        case .grain:       return "grain"
+        case .freeze:      return "freeze"
+        case .music:       return "music"
+        case .titleCard:   return "title"
         }
     }
 }

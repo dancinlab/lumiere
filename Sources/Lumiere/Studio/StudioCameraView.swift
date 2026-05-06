@@ -2,13 +2,25 @@ import SwiftUI
 import AVFoundation
 
 struct StudioCameraView: View {
-    @StateObject private var session = CameraSession(
-        processor: AnamorphicFrameProcessor()
-    )
+    /// Single shared `StudioPipeline` instance — handed to
+    /// `CameraSession` as the `FrameProcessor`, and also held as a
+    /// view-state reference so the toggle row can flip stages on/off
+    /// live without rebuilding the camera session.
+    @StateObject private var bridge = StudioPipelineBridge()
+    @StateObject private var session: CameraSession
     @State private var anamorphicEnabled = true
+    @State private var enabledEffects: Set<CinematicEffect> = [.anamorphic]
     @Environment(\.dismiss) private var dismiss
 
     private let aspectRatio: CGFloat = 2.39
+
+    init() {
+        let bridge = StudioPipelineBridge()
+        _bridge = StateObject(wrappedValue: bridge)
+        _session = StateObject(
+            wrappedValue: CameraSession(processor: bridge.pipeline)
+        )
+    }
 
     var body: some View {
         ZStack {
@@ -67,6 +79,7 @@ struct StudioCameraView: View {
                        warn: session.recorder.p95Ms > 25.0)
                 metric("n", value: Double(session.recorder.sampleCount), unit: "")
             }
+            effectToggleRow
             Toggle("Anamorphic 2.39:1 letterbox", isOn: $anamorphicEnabled)
                 .tint(.orange)
                 .foregroundStyle(.white)
@@ -76,6 +89,51 @@ struct StudioCameraView: View {
         .background(.black.opacity(0.5), in: .rect(cornerRadius: 16))
         .padding(.horizontal, 16)
         .padding(.bottom, 24)
+    }
+
+    /// Horizontally-scrolling chip row for toggling each of the 9
+    /// cinematic effects in the live `StudioPipeline`. Independent
+    /// of the SwiftUI `anamorphicEnabled` letterbox visual (which
+    /// is purely a SwiftUI overlay).
+    private var effectToggleRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(CinematicEffect.allCases) { effect in
+                    let on = enabledEffects.contains(effect)
+                    Button {
+                        toggle(effect)
+                    } label: {
+                        HStack(spacing: 4) {
+                            if on {
+                                Image(systemName: "checkmark")
+                                    .font(.caption2.weight(.bold))
+                            }
+                            Text(effect.shortName)
+                                .font(.caption2.monospaced())
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .foregroundStyle(on ? .black : .white)
+                        .background(
+                            on ? AnyShapeStyle(.orange)
+                               : AnyShapeStyle(.white.opacity(0.15)),
+                            in: .capsule
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private func toggle(_ effect: CinematicEffect) {
+        if enabledEffects.contains(effect) {
+            enabledEffects.remove(effect)
+            bridge.pipeline.enable(effect, false)
+        } else {
+            enabledEffects.insert(effect)
+            bridge.pipeline.enable(effect, true)
+        }
     }
 
     private func metric(_ label: String, value: Double, unit: String = "ms", warn: Bool = false) -> some View {
@@ -102,6 +160,22 @@ struct StudioCameraView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(.orange)
         }
+    }
+}
+
+/// Holds the single `StudioPipeline` reference so both the
+/// `CameraSession` and the toggle UI mutate the same instance.
+/// Wrapped in an `ObservableObject` so SwiftUI keeps it alive across
+/// view updates.
+@MainActor
+final class StudioPipelineBridge: ObservableObject {
+    let pipeline: StudioPipeline
+
+    init() {
+        // Default: anamorphic on, others off. F-MC-MVP-1 latency
+        // measurement starts here — toggling stages on adds their
+        // CIFilter cost to the recorded p50 / p95 in real time.
+        self.pipeline = StudioPipeline(defaultEnabled: [.anamorphic])
     }
 }
 
