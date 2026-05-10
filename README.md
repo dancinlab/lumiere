@@ -1,8 +1,10 @@
 # Lumière ✨
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20102960.svg)](https://doi.org/10.5281/zenodo.20102960)
+
 > 빛으로 찍고, 빛으로 연출하다 — *Capture in light, direct in light*
 
-**Lumière** is a physical-limit iOS app that absorbs the entire `apps` axis of [n6-architecture](https://github.com/need-singularity/n6-architecture) — 5 verb-distinct surfaces unified under the 16.67 ms real-time budget (60 fps Nyquist) and the Airy diffraction limit.
+**Lumière** is a physical-limit iOS app that absorbs the entire `apps` axis of [n6-architecture](https://github.com/dancinlab/n6-architecture) — 5 verb-distinct surfaces unified under the 16.67 ms real-time budget (60 fps Nyquist) and the Airy diffraction limit.
 
 ---
 
@@ -40,11 +42,11 @@ Anamorphic 2.39:1 · teal-orange grading · Lucas-Kanade 1981 optical-flow slow-
 
 | Mode | F-gate prefix | GitHub issues |
 |---|---|---|
-| Camera | F-CFA-MVP-1..5 | [#1–5](https://github.com/need-singularity/lumiere/issues?q=label%3Acamera) |
-| Studio | F-MC-MVP-1..5 | [#6–10](https://github.com/need-singularity/lumiere/issues?q=label%3Astudio) |
-| Forge | F-FA-MVP-1..5 | [#11–15](https://github.com/need-singularity/lumiere/issues?q=label%3Aforge) |
-| Mirror | F-PSELF-MVP-1..5 | [#16–20](https://github.com/need-singularity/lumiere/issues?q=label%3Amirror) |
-| Atelier | F-VSCO-MVP-1..5 | [#21–25](https://github.com/need-singularity/lumiere/issues?q=label%3Aatelier) |
+| Camera | F-CFA-MVP-1..5 | [#1–5](https://github.com/dancinlab/lumiere/issues?q=label%3Acamera) |
+| Studio | F-MC-MVP-1..5 | [#6–10](https://github.com/dancinlab/lumiere/issues?q=label%3Astudio) |
+| Forge | F-FA-MVP-1..5 | [#11–15](https://github.com/dancinlab/lumiere/issues?q=label%3Aforge) |
+| Mirror | F-PSELF-MVP-1..5 | [#16–20](https://github.com/dancinlab/lumiere/issues?q=label%3Amirror) |
+| Atelier | F-VSCO-MVP-1..5 | [#21–25](https://github.com/dancinlab/lumiere/issues?q=label%3Aatelier) |
 
 ### Cycle history
 
@@ -79,7 +81,7 @@ All five are own#15 21-section research-paper-format spec docs (own#33 ai-native
 
 ## Lineage
 
-Lumière absorbs the entire [n6-architecture](https://github.com/need-singularity/n6-architecture) **apps axis** — the 13th axis registered 2026-05-01 — where the 5 verb-distinct sibling domains were factored as separate research papers but share one consumer iOS surface.
+Lumière absorbs the entire [n6-architecture](https://github.com/dancinlab/n6-architecture) **apps axis** — the 13th axis registered 2026-05-01 — where the 5 verb-distinct sibling domains were factored as separate research papers but share one consumer iOS surface.
 
 ## Build
 
