@@ -8,6 +8,20 @@
 
 ---
 
+## Install
+
+```bash
+# 1. Install hexa-lang (ships `hexa` + `hx` package manager)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/dancinlab/hexa-lang/main/install.sh)"
+
+# 2. Install lumiere
+hx install lumiere          # global, pulls latest from registry
+```
+
+> **NOTE**: Lumière is an iOS-native app (Swift / SwiftUI / AVFoundation). The `hx install lumiere` registry entry pulls source + scaffolding; for a runnable build, see the [Build](#build) section (xcodegen + Xcode 26+).
+
+---
+
 ## Two tabs · five surfaces
 
 The 5 verb-distinct sister specs are absorbed into 2 iOS tabs by capture-vs-post-capture concern. Verb-distinction is preserved as sub-mode within each tab.
